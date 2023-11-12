@@ -10,24 +10,6 @@ from time import sleep
 
 ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, parity="N")
 
-def send_receive_request(log = print):
-    try:
-        while True:
-            ser.write(b"`")
-
-            sleep(1)
-
-    except TypeError:
-        pass
-
-    except serial.PortNotOpenError:
-        pass
-
-    except:
-        log("Error when trying to send receive request!")
-
-        traceback.print_exc()
-
 def receive_messages(log = print):
     last_message = ""
 
@@ -61,13 +43,15 @@ class MyWindow(Gtk.Window):
         self.set_border_width(10)
 
         t = Thread(target=receive_messages, args=[self.log])
-        t_timer = Thread(target=send_receive_request, args=[self.log])
 
         self.send_button = Gtk.Button(label="Send")
         self.send_button.connect("clicked", self.on_send)
 
         self.echo_back_button = Gtk.Button(label="Echo Back")
         self.echo_back_button.connect("clicked", self.on_echo_back)
+
+        self.read_button = Gtk.Button(label="Read")
+        self.read_button.connect("clicked", self.on_read)
 
         self.clear_button = Gtk.Button(label="Clear")
         self.clear_button.connect("clicked", self.on_clear)
@@ -79,7 +63,8 @@ class MyWindow(Gtk.Window):
         grid = Gtk.Grid(column_spacing=10, row_spacing=10)
         grid.attach(self.send_button, 0, 0, 1, 1)
         grid.attach_next_to(self.echo_back_button, self.send_button, Gtk.PositionType.BOTTOM, 1, 1)
-        grid.attach_next_to(self.clear_button, self.echo_back_button, Gtk.PositionType.BOTTOM, 1, 1)
+        grid.attach_next_to(self.read_button, self.echo_back_button, Gtk.PositionType.BOTTOM, 1, 1)
+        grid.attach_next_to(self.clear_button, self.read_button, Gtk.PositionType.BOTTOM, 1, 1)
 
         box = Gtk.Box(spacing=10)
         box.pack_start(grid, False, False, 0)
@@ -88,7 +73,6 @@ class MyWindow(Gtk.Window):
         self.add(box)
 
         t.start()
-        t_timer.start()
 
     def log(self, text = ""):
         old_buffer = self.received_messagens_view.get_buffer()
@@ -110,12 +94,17 @@ class MyWindow(Gtk.Window):
 
         ser.write(ascii_bytes)
 
-        self.log("Message was sent!")
+        self.log(f"Message '{user_message}' was sent!")
 
     def on_echo_back(self, widget):
-        self.log("Getting write buffer contents...")
+        self.log("Reading messages that were sent from this client...")
 
         ser.write(b"^")
+
+    def on_read(self, widget):
+        self.log("Reading kernel messages...")
+
+        ser.write(b"`")
 
     def on_clear(self, widget):
         new_text = ""
