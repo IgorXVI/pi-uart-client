@@ -6,13 +6,10 @@ from gi.repository import Gtk
 import serial
 from threading import Thread
 import traceback
-from time import sleep
 
 ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, parity="N")
 
 def receive_messages(log = print):
-    last_message = ""
-
     try:
         log(f"Listening for messages from '{ser.port }'...")
 
@@ -20,11 +17,6 @@ def receive_messages(log = print):
             received_message = ser.read_until(expected=b"\0")
 
             formated = str(received_message, encoding="ascii")
-
-            if last_message == formated:
-                continue
-
-            last_message = formated
 
             log(f"Received message: {formated}")
 
@@ -53,8 +45,11 @@ class MyWindow(Gtk.Window):
         self.read_button = Gtk.Button(label="Read")
         self.read_button.connect("clicked", self.on_read)
 
-        self.clear_button = Gtk.Button(label="Clear")
-        self.clear_button.connect("clicked", self.on_clear)
+        self.clear_history_button = Gtk.Button(label="Clear History")
+        self.clear_history_button.connect("clicked", self.on_clear_history)
+
+        self.clear_log_button = Gtk.Button(label="Clear Log")
+        self.clear_log_button.connect("clicked", self.on_clear_log)
 
         self.received_messagens_view = Gtk.TextView(editable=False, wrap_mode=Gtk.WrapMode.CHAR)
 
@@ -64,7 +59,8 @@ class MyWindow(Gtk.Window):
         grid.attach(self.send_button, 0, 0, 1, 1)
         grid.attach_next_to(self.echo_back_button, self.send_button, Gtk.PositionType.BOTTOM, 1, 1)
         grid.attach_next_to(self.read_button, self.echo_back_button, Gtk.PositionType.BOTTOM, 1, 1)
-        grid.attach_next_to(self.clear_button, self.read_button, Gtk.PositionType.BOTTOM, 1, 1)
+        grid.attach_next_to(self.clear_history_button, self.read_button, Gtk.PositionType.BOTTOM, 1, 1)
+        grid.attach_next_to(self.clear_log_button, self.clear_history_button, Gtk.PositionType.BOTTOM, 1, 1)
 
         box = Gtk.Box(spacing=10)
         box.pack_start(grid, False, False, 0)
@@ -79,7 +75,7 @@ class MyWindow(Gtk.Window):
 
         old_text = old_buffer.get_text(old_buffer.get_start_iter(), old_buffer.get_end_iter(), True)
 
-        new_text = old_text + ">" + text + "\n"
+        new_text = f"{old_text}->{text}\n"
 
         new_buffer = Gtk.TextBuffer()
 
@@ -106,7 +102,12 @@ class MyWindow(Gtk.Window):
 
         ser.write(b"`")
 
-    def on_clear(self, widget):
+    def on_clear_history(self, widget):
+        self.log("Erasing previous messages sent from this client...")
+
+        ser.write(b"~")
+
+    def on_clear_log(self, widget):
         new_text = ""
 
         new_buffer = Gtk.TextBuffer()
