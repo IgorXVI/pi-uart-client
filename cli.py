@@ -3,8 +3,8 @@ from threading import Thread
 import traceback
 
 class bcolors:
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
+    KERNEL = '\033[94m'
+    USER = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
 
@@ -16,13 +16,15 @@ def receive_messages():
         print(f"{bcolors.WARNING}Listening for messages...")
 
         while True:
-            print(bcolors.OKGREEN)
+            print(bcolors.USER)
 
             received_message = ser.read_until(expected=b"\0")
 
             formated = str(received_message, encoding="ascii")
 
-            print(f"{bcolors.OKBLUE}\nreceived message: {formated}")
+            print(f"{bcolors.WARNING}received message:")
+
+            print(f"{bcolors.KERNEL}{formated}")
 
     except TypeError:
         pass
@@ -39,7 +41,7 @@ try:
     t.start()
 
     while True:
-        print(bcolors.OKGREEN)
+        print(bcolors.USER)
 
         user_message = input()
 
