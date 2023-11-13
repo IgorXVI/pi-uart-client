@@ -6,10 +6,30 @@ from gi.repository import Gtk
 import serial
 from threading import Thread, Lock
 import traceback
+from time import sleep
 
 mutex = Lock()
 
 ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, parity="N")
+
+
+def send_receive_request(log = print):
+    try:
+        while True:
+            ser.write(b"`")
+
+            sleep(1)
+
+    except TypeError:
+        pass
+
+    except serial.PortNotOpenError:
+        pass
+
+    except:
+        log("Error when trying to send receive request!")
+
+        traceback.print_exc()
 
 def receive_messages(log = print):
     last_message = ""
@@ -75,6 +95,7 @@ class MyWindow(Gtk.Window):
         self.set_border_width(10)
 
         t = Thread(target=receive_messages, args=[self.log])
+        t_timer = Thread(target=send_receive_request, args=[self.log])
 
         self.entry = Gtk.Entry()
         self.entry.set_text("Message from client.")
@@ -114,6 +135,7 @@ class MyWindow(Gtk.Window):
         self.add(box)
 
         t.start()
+        t_timer.start()
 
     def log(self, text = "", source = ""):
         with mutex:
@@ -147,15 +169,15 @@ class MyWindow(Gtk.Window):
 
             self.log_list.show_all()
 
+try:
+    win = MyWindow()
+    win.connect("destroy", Gtk.main_quit)
+    win.show_all()
+    Gtk.main()
 
-def window_quit(arg):
-    Gtk.main_quit(arg)
+except Exception:
+    traceback.print_exc()
 
+finally:
     print("Closing connection...")
-
     ser.close()
-
-win = MyWindow()
-win.connect("destroy", window_quit)
-win.show_all()
-Gtk.main()
