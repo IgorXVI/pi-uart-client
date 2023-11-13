@@ -6,29 +6,10 @@ from gi.repository import Gtk
 import serial
 from threading import Thread, Lock
 import traceback
-from time import sleep
 
 mutex = Lock()
 
 ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, parity="N")
-
-def send_receive_request(log = print):
-    try:
-        while True:
-            ser.write(b"`")
-
-            sleep(1)
-
-    except TypeError:
-        pass
-
-    except serial.PortNotOpenError:
-        pass
-
-    except:
-        log("Error when trying to send receive request!")
-
-        traceback.print_exc()
 
 def receive_messages(log = print):
     last_message = ""
@@ -39,7 +20,7 @@ def receive_messages(log = print):
         while True:
             received_message = ser.read_until(expected=b"\0")
 
-            formated = str(received_message, encoding="ascii")
+            formated = str(received_message, encoding="ascii")[:-1]
 
             if formated.startswith("Max buffer size") and formated == last_message:
                 continue
@@ -78,9 +59,7 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
         markup = "<markup>"
 
         for line in text.split("\n"):
-            new_line = line.rstrip("\0")
-
-            markup += f'\n<span {span_style}>{new_line}</span>'
+            markup += f'\n<span {span_style}>{line}</span>'
 
         markup += "\n</markup>"
 
@@ -94,7 +73,6 @@ class MyWindow(Gtk.Window):
         self.set_border_width(10)
 
         t = Thread(target=receive_messages, args=[self.log])
-        t_timer = Thread(target=send_receive_request, args=[self.log])
 
         self.entry = Gtk.Entry()
         self.entry.set_text("Message from client.")
@@ -134,7 +112,6 @@ class MyWindow(Gtk.Window):
         self.add(box)
 
         t.start()
-        t_timer.start()
 
     def log(self, text = "", source = ""):
         with mutex:

@@ -62,10 +62,10 @@ try:
 
             continue
 
-        if user_message == "`":
+        if user_message == "|":
             print("Getting write buffer contents...")
 
-            ser.write(b"`")
+            ser.write(b"|")
 
             continue
 
