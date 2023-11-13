@@ -27,7 +27,7 @@ def receive_messages(log = print):
 
             last_message = formated
 
-            log(f"Received message: {formated}")
+            log(formated, "Kernel")
 
     except TypeError:
         pass
@@ -39,10 +39,35 @@ def receive_messages(log = print):
 
 
 class ListBoxRowWithData(Gtk.ListBoxRow):
-    def __init__(self, data):
+    def __init__(self, text="", source=""):
         super().__init__()
-        self.data = data
-        self.add(Gtk.Label(label=data))
+
+        label = Gtk.Label()
+
+        span_style = ""
+
+        if source == "Client":
+            span_style = 'foreground="black" size="large"'
+            label.set_halign(Gtk.Align.END)
+        elif source == "Kernel":
+            span_style = 'foreground="blue" size="large"'
+            label.set_halign(Gtk.Align.START)
+        else:
+            span_style = 'foreground="red" size="large"'
+            label.set_halign(Gtk.Align.CENTER)
+
+        markup = "<markup>"
+
+        for line in text.split("\n"):
+            new_line = line.rstrip("\0")
+
+            markup += f'\n<span {span_style}>{new_line}</span>'
+
+        markup += "\n</markup>"
+
+        label.set_markup(markup)
+
+        self.add(label)
 
 class MyWindow(Gtk.Window):
     def __init__(self):
@@ -90,9 +115,9 @@ class MyWindow(Gtk.Window):
 
         t.start()
 
-    def log(self, text = ""):
+    def log(self, text = "", source = ""):
         with mutex:
-            self.log_list.add(ListBoxRowWithData(text))
+            self.log_list.add(ListBoxRowWithData(text, source))
             self.log_list.show_all()
 
     def on_send(self, widget):
@@ -102,7 +127,7 @@ class MyWindow(Gtk.Window):
 
         ser.write(ascii_bytes)
 
-        self.log(f"Message '{user_message}' was sent!")
+        self.log(user_message, "Client")
 
     def on_echo_back(self, widget):
         ser.write(b"^")
