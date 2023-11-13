@@ -12,7 +12,6 @@ mutex = Lock()
 
 ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, parity="N")
 
-
 def send_receive_request(log = print):
     try:
         while True:
@@ -103,10 +102,10 @@ class MyWindow(Gtk.Window):
         self.send_button = Gtk.Button(label="Send")
         self.send_button.connect("clicked", self.on_send)
 
-        self.echo_back_button = Gtk.Button(label="Read Message History")
+        self.echo_back_button = Gtk.Button(label="Message History")
         self.echo_back_button.connect("clicked", self.on_echo_back)
 
-        self.read_button = Gtk.Button(label="Read Kernel Messages")
+        self.read_button = Gtk.Button(label="Repeat Last Kernel Message")
         self.read_button.connect("clicked", self.on_read)
 
         self.clear_history_button = Gtk.Button(label="Clear History")
@@ -155,7 +154,7 @@ class MyWindow(Gtk.Window):
         ser.write(b"^")
 
     def on_read(self, widget):
-        ser.write(b"`")
+        ser.write(b"|")
 
     def on_clear_history(self, widget):
         ser.write(b"~")
