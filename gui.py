@@ -96,6 +96,7 @@ class MyWindow(Gtk.Window):
         self.log_list.set_selection_mode(Gtk.SelectionMode.NONE)
 
         scroll_window = Gtk.ScrolledWindow(child=self.log_list)
+        scroll_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
         grid = Gtk.Grid(column_spacing=10, row_spacing=10)
         grid.attach(self.entry, 0, 0, 3, 1)
