@@ -2,24 +2,33 @@ import serial
 from threading import Thread
 import traceback
 
+class bcolors:
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+
+
 ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, parity="N")
 
 def receive_messages():
     try:
-        print("Listening for messages...")
+        print(f"{bcolors.WARNING}Listening for messages...")
 
         while True:
+            print(bcolors.OKGREEN)
+
             received_message = ser.read_until(expected=b"\0")
 
             formated = str(received_message, encoding="ascii")
 
-            print(f"\nreceived message: {formated}")
+            print(f"{bcolors.OKBLUE}\nreceived message: {formated}")
 
     except TypeError:
         pass
 
     except:
-        print("\nError when trying to read messages:")
+        print(f"{bcolors.FAIL}\nError when trying to read messages:")
 
         traceback.print_exc()
 
@@ -30,24 +39,26 @@ try:
     t.start()
 
     while True:
+        print(bcolors.OKGREEN)
+
         user_message = input()
 
         if user_message == "~":
-            print("Erasing previous messages...")
+            print(f"{bcolors.WARNING}Erasing previous messages...")
 
             ser.write(b"~")
 
             continue
 
         if user_message == "^":
-            print("Getting read buffer contents...")
+            print(f"{bcolors.WARNING}Getting read buffer contents...")
 
             ser.write(b"^")
 
             continue
 
         if user_message == "|":
-            print("Getting write buffer contents...")
+            print(f"{bcolors.WARNING}Getting write buffer contents...")
 
             ser.write(b"|")
 
@@ -57,17 +68,17 @@ try:
 
         ser.write(ascii_bytes)
 
-        print("Message was sent!")
+        print(f"{bcolors.WARNING}Message was sent!")
 
 except KeyboardInterrupt:
     print("\n")
 
 except:
-    print("\nError when trying to write messages:")
+    print(f"{bcolors.FAIL}\nError when trying to write messages:")
 
     traceback.print_exc()
 
 finally:
-    print("Closing connection...")
+    print(f"{bcolors.WARNING}Closing connection...")
 
     ser.close()
