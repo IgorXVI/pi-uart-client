@@ -1,13 +1,8 @@
 import serial
-from threading import Thread, Lock
+from threading import Thread
 import traceback
-from datetime import datetime
 
 ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, parity="N")
-
-mutex = Lock()
-
-received_messages = [""]
 
 def receive_messages():
     try:
@@ -18,8 +13,7 @@ def receive_messages():
 
             formated = str(received_message, encoding="ascii")
 
-            with mutex:
-                received_messages.append(f"{datetime.now()}: {formated}")
+            print(f"\nreceived message: {formated}")
 
     except TypeError:
         pass
@@ -36,17 +30,7 @@ try:
     t.start()
 
     while True:
-        user_message = input("Your message: ")
-
-        if user_message == "??":
-            print("Printing received messages...")
-
-            with mutex:
-                formated = "\n".join(received_messages)
-
-                print(formated)
-
-            continue
+        user_message = input()
 
         if user_message == "~":
             print("Erasing previous messages...")
