@@ -4,12 +4,16 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 import serial
-from threading import Thread
+from threading import Thread, Lock
 import traceback
+
+mutex = Lock()
 
 ser = serial.Serial("/dev/ttyUSB0", baudrate=9600, parity="N")
 
 def receive_messages(log = print):
+    last_message = ""
+
     try:
         log(f"Listening for messages from '{ser.port }'...")
 
@@ -18,7 +22,12 @@ def receive_messages(log = print):
 
             formated = str(received_message, encoding="ascii")
 
-            log(f"Received message:\n{formated}")
+            if formated.startswith("Max buffer size") and formated == last_message:
+                continue
+
+            last_message = formated
+
+            log(f"Received message: {formated}")
 
     except TypeError:
         pass
@@ -28,6 +37,12 @@ def receive_messages(log = print):
 
         traceback.print_exc()
 
+
+class ListBoxRowWithData(Gtk.ListBoxRow):
+    def __init__(self, data):
+        super().__init__()
+        self.data = data
+        self.add(Gtk.Label(label=data))
 
 class MyWindow(Gtk.Window):
     def __init__(self):
@@ -54,9 +69,10 @@ class MyWindow(Gtk.Window):
         self.clear_log_button = Gtk.Button(label="Clear Log")
         self.clear_log_button.connect("clicked", self.on_clear_log)
 
-        self.received_messagens_view = Gtk.TextView(editable=False, wrap_mode=Gtk.WrapMode.CHAR)
+        self.log_list = Gtk.ListBox()
+        self.log_list.set_selection_mode(Gtk.SelectionMode.NONE)
 
-        scroll_window = Gtk.ScrolledWindow(child=self.received_messagens_view)
+        scroll_window = Gtk.ScrolledWindow(child=self.log_list)
 
         grid = Gtk.Grid(column_spacing=10, row_spacing=10)
         grid.attach(self.entry, 0, 0, 3, 1)
@@ -75,17 +91,9 @@ class MyWindow(Gtk.Window):
         t.start()
 
     def log(self, text = ""):
-        old_buffer = self.received_messagens_view.get_buffer()
-
-        old_text = old_buffer.get_text(old_buffer.get_start_iter(), old_buffer.get_end_iter(), True)
-
-        new_text = f"{old_text}->{text}\n"
-
-        new_buffer = Gtk.TextBuffer()
-
-        new_buffer.set_text(new_text)
-
-        self.received_messagens_view.set_buffer(new_buffer)
+        with mutex:
+            self.log_list.add(ListBoxRowWithData(text))
+            self.log_list.show_all()
 
     def on_send(self, widget):
         user_message = self.entry.get_text()
@@ -106,13 +114,13 @@ class MyWindow(Gtk.Window):
         ser.write(b"~")
 
     def on_clear_log(self, widget):
-        new_text = ""
+        with mutex:
+            children = self.log_list.get_children()
 
-        new_buffer = Gtk.TextBuffer()
+            for element in children:
+                self.log_list.remove(element)
 
-        new_buffer.set_text(new_text)
-
-        self.received_messagens_view.set_buffer(new_buffer)
+            self.log_list.show_all()
 
 
 def window_quit(arg):
